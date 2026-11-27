@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Kaii Cash</title>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }
+    .card { background: #1e1e1e; padding: 24px; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    h2 { margin-top: 0; text-align: center; color: #4ade80; }
+    label { font-size: 12px; color: #9ca3af; display: block; margin-top: 10px; }
+    input, textarea, select, button { width: 100%; padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: #fff; box-sizing: border-box; font-size: 15px; }
+    button { background: #22c55e; color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 14px; }
+    button:hover { background: #16a34a; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    #status { margin-top: 12px; text-align: center; font-size: 14px; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Kirim ke Roblox (DONATE CASH)</h2>
+
+    <label for="password">Password admin</label>
+    <input type="password" id="password" autocomplete="current-password">
+
+    <label for="nama">Nama (opsional)</label>
+    <input type="text" id="nama" maxlength="50" placeholder="kosongkan untuk pengumuman biasa">
+
+    <label for="nominal">Nominal Rp (opsional)</label>
+    <input type="number" id="nominal" min="0" step="1000" placeholder="contoh: 25000">
+
+    <label for="sumber">Sumber</label>
+    <select id="sumber">
+      <option value="saweria">Saweria</option>
+      <option value="sociabuzz">Sociabuzz</option>
+    </select>
+
+    <label for="pesan">Pesan</label>
+    <textarea id="pesan" rows="3" maxlength="200" placeholder="Tulis pesan..."></textarea>
+    <div class="hint">Hanya pesan = popup "Pengumuman" + MessagePart. Ada nominal = popup donasi + Live board. Tidak masuk leaderboard.</div>
+
+    <button id="kirim" type="button">Kirim ke Server Game</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    $("kirim").addEventListener("click", async () => {
+      const status = $("status");
+      $("kirim").disabled = true;
+      status.style.color = "#fff";
+      status.textContent = "Mengirim...";
+      try {
+        const res = await fetch("/api/kirim-pesan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            password: $("password").value,
+            nama: $("nama").value,
+            nominal: $("nominal").value,
+            sumber: $("sumber").value,
+            pesan: $("pesan").value,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.sukses) {
+          status.style.color = "#4ade80";
+          status.textContent = "Berhasil terkirim ke Roblox!";
+          $("pesan").value = "";
+        } else {
+          status.style.color = "#f87171";
+          status.textContent = "Gagal: " + (data.error || ("HTTP " + res.status));
+        }
+      } catch (e) {
+        status.style.color = "#f87171";
+        status.textContent = "Gagal: " + e.message;
+      } finally {
+        $("kirim").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

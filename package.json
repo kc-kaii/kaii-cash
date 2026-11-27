@@ -1,0 +1,7 @@
+{
+  "name": "roblox-donation-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jembatan webhook Saweria/Sociabuzz -> Roblox MessagingService (Vercel)",
+  "engines": { "node": ">=18" }
+}
