@@ -2,7 +2,7 @@
 // POST /api/kirim-pesan  body: { password, nama?, nominal?, pesan, sumber? }
 // Password diambil dari Environment Variable ADMIN_PASSWORD (JANGAN ditulis di kode).
 const crypto = require("crypto");
-const { publishToRoblox } = require("../lib/bridge");
+const { publishToRoblox, addToLeaderboard } = require("../lib/bridge");
 
 const TOPIC = "PengumumanCash";
 
@@ -37,14 +37,24 @@ module.exports = async (req, res) => {
     return res.status(400).json({ sukses: false, error: "Isi pesan atau nominal." });
   }
 
-  // Ada nama/nominal -> JSON (popup donasi + Live board). Hanya pesan -> teks (popup "Pengumuman").
+  // Ada nama/nominal -> JSON (popup donasi + Live board + leaderboard). Hanya pesan -> teks (popup "Pengumuman").
   const data = (nama || nominal > 0)
-    ? { id: "panel-" + Date.now(), name: nama || "Pengumuman", amount: nominal, message: pesan, source: sumber }
+    ? { id: "panel-" + Date.now(), name: nama || "Pengumuman", amount: nominal, message: pesan, source: sumber, countLeaderboard: nominal > 0, stored: false }
     : pesan;
+
+  // Donasi bernominal langsung masuk leaderboard (walaupun tidak ada server game online)
+  if (typeof data === "object" && nominal > 0 && nama) {
+    try {
+      await addToLeaderboard(nama, nominal);
+      data.stored = true;
+    } catch (err) {
+      console.error("[kirim-pesan] gagal simpan leaderboard:", err.message);
+    }
+  }
 
   try {
     await publishToRoblox(data, TOPIC);
-    res.status(200).json({ sukses: true });
+    res.status(200).json({ sukses: true, leaderboard: typeof data === "object" ? data.stored : false });
   } catch (err) {
     console.error("[kirim-pesan]", err.message);
     res.status(500).json({ sukses: false, error: err.message });
